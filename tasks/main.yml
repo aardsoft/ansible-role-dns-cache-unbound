@@ -1,0 +1,65 @@
+- name: Install unbound (Debian)
+  apt:
+    name: "unbound"
+    state: present
+    update_cache: yes
+    cache_valid_time: 3600
+  when: ansible_os_family == "Debian"
+
+- name: Install unbound (SuSE)
+  zypper:
+    name: "unbound"
+    state: present
+  when: ansible_os_family == "Suse"
+
+- name: Install unbound (RedHat/dnf)
+  dnf:
+    name: "unbound"
+    state: present
+  when: ansible_os_family == "RedHat" and ansible_pkg_mgr == "dnf"
+
+- name: Install unbound (RedHat/yum)
+  yum:
+    name: "unbound"
+    state: present
+  when: ansible_os_family == "RedHat" and ansible_pkg_mgr == "yum"
+
+# RedHat has a hard coded call to unbound-anchor in the service file
+# Without being able to update that it blocks startup for almost a minute.
+- name: Mask unbound service to disable trust anchor (RedHat)
+  copy:
+    src: unbound.service
+    dest: /etc/systemd/system/unbound.service
+    owner: root
+    group: root
+    mode: 0644
+  notify:
+    - restart unbound
+
+- name: update unbound configuration
+  template:
+    src: unbound.conf.j2
+    dest: /etc/unbound/unbound.conf
+    owner: root
+    group: root
+    mode: 0644
+  notify:
+    - restart unbound
+
+- name: create local unbound zones
+  template:
+    src: unbound.local.conf
+    dest: /etc/unbound/local.d/unbound.local.conf
+  notify:
+    - restart unbound
+
+- name: configure firewall
+  firewalld:
+    service: dns
+    permanent: true
+    state: enabled
+    immediate: true
+  when: ansible_os_family == "RedHat"
+
+- name: enable unbound
+  service: name=unbound enabled=yes
