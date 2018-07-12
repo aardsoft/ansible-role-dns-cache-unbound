@@ -61,7 +61,10 @@
     permanent: true
     state: enabled
     immediate: true
-  when: ansible_os_family == "RedHat"
+  when: >
+    ansible_os_family == "RedHat" or
+    (firewalld_available is defined and
+    firewalld_available == True)
 
 - name: enable unbound
   service: name=unbound enabled=yes
