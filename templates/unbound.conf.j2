@@ -54,21 +54,34 @@ server:
         # access-control: ::1 allow
         # access-control: ::ffff:127.0.0.1 allow
 
+{% if unbound_skip_interfaces is undefined and dns_skip_interfaces is defined %}
+{% set unbound_skip_interfaces = dns_skip_interfaces %}
+{% endif %}
+
+{% if unbound_skip_interfaces is undefined and skip_interfaces is defined %}
+{% set unbound_skip_interfaces = skip_interfaces %}
+{% endif %}
+
 {# this adds all local interfaces of this machine as listen interfaces and #}
 {# allows access from the matching subnet #}
 {% for interface in ansible_interfaces if interface != 'lo' and interface != 'sit0' %}
-  {% if hostvars[inventory_hostname]['ansible_' + interface]['ipv4'] is defined and
-     hostvars[inventory_hostname]['ansible_' + interface]['ipv4']['address'] is defined %}
-    {% set if_address = hostvars[inventory_hostname]['ansible_' + interface]['ipv4']['address'] %}
-    {% set if_network = hostvars[inventory_hostname]['ansible_' + interface]['ipv4']['network'] %}
-    {% set if_netmask = hostvars[inventory_hostname]['ansible_' + interface]['ipv4']['netmask'] %}
-    {% set if_networknetmask = if_network + '/' + if_netmask %}
-    interface: {{ if_address }}
-    access-control: {{ if_networknetmask| ipaddr('net') }} allow
-  {% endif %}
-  {% if hostvars[inventory_hostname]['ansible_' + interface]['ipv6'] is defined and
-     hostvars[inventory_hostname]['ansible_' + interface]['ipv6']['address'] is defined %}
-    interface: {{ hostvars[inventory_hostname]['ansible_' + interface]['ipv6']['address'] }}
+  {% if unbound_skip_interfaces is defined and interface in unbound_skip_interfaces %}
+      # skipping interface: {{ interface }}
+  {% else %}
+    {% if hostvars[inventory_hostname]['ansible_' + interface]['ipv4'] is defined and
+       hostvars[inventory_hostname]['ansible_' + interface]['ipv4']['address'] is defined %}
+      {% set if_address = hostvars[inventory_hostname]['ansible_' + interface]['ipv4']['address'] %}
+      {% set if_network = hostvars[inventory_hostname]['ansible_' + interface]['ipv4']['network'] %}
+      {% set if_netmask = hostvars[inventory_hostname]['ansible_' + interface]['ipv4']['netmask'] %}
+      {% set if_networknetmask = if_network + '/' + if_netmask %}
+      # {{ interface }}
+      interface: {{ if_address }}
+      access-control: {{ if_networknetmask| ipaddr('net') }} allow
+    {% endif %}
+    {% if hostvars[inventory_hostname]['ansible_' + interface]['ipv6'] is defined and
+       hostvars[inventory_hostname]['ansible_' + interface]['ipv6']['address'] is defined %}
+      interface: {{ hostvars[inventory_hostname]['ansible_' + interface]['ipv6']['address'] }}
+    {% endif %}
   {% endif %}
 {% endfor %}
 
@@ -572,11 +585,13 @@ include: /etc/unbound/conf.d/*.conf
 #       name: "example.org"
 #       forward-host: fwd.example.com
 
+{% if dns_forwarders is defined %}
 forward-zone:
         name: "."
 {% for server in dns_forwarders %}
         forward-addr: {{ server }}
 {% endfor %}
+{% endif %}
 
 # You can now also dynamically create and delete forward-zone's using
 # unbound-control forward_add domain.com 1.2.3.4 5.6.7.8
