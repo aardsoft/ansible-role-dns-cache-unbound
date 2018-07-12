@@ -50,6 +50,8 @@
   template:
     src: unbound.local.conf
     dest: /etc/unbound/local.d/unbound.local.conf
+  when: >
+    dns_domain is defined
   notify:
     - restart unbound
 
