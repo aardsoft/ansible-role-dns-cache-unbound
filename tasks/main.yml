@@ -55,6 +55,15 @@
   notify:
     - restart unbound
 
+- name: create local stub zones
+  template:
+    src: unbound.stub.conf.j2
+    dest: /etc/unbound/conf.d/unbound.stub.conf
+  when: >
+    unbound_stub_zones is defined
+  notify:
+    - restart unbound
+
 - name: configure firewall
   firewalld:
     service: dns
