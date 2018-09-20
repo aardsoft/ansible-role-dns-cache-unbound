@@ -48,7 +48,7 @@
 
 - name: create local unbound zones
   template:
-    src: unbound.local.conf
+    src: unbound.local.conf.j2
     dest: /etc/unbound/local.d/unbound.local.conf
   when: >
     dns_domain is defined
