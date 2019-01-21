@@ -551,7 +551,53 @@ remote-control:
         #control-cert-file: "/etc/unbound/unbound_control.pem"
 
 # Stub and Forward zones
+#
 
+{% set dns = {'domain': 'undefined'} %}
+{# dns_default_domain should probably be just dns_default_domain #}
+{% if dns_domain is undefined and dns_default_domain is defined %}
+{% if dns.update({'domain': dns_default_domain}) %}{% endif %}
+{% elif dns_domain is defined %}
+{% if dns.update({'domain': dns_domain}) %}{% endif %}
+{% endif %}
+
+
+# Dynamically created stub zones from dhcp networks, for use with
+# name servers other than unbound
+{% if stub_dns is defined and dhcp_networks is defined %}
+  {% for net in dhcp_networks %}
+    {% for subnet in dhcp_networks[net].subnets %}
+      {% if subnet | ipaddr('prefix') == 24 %}
+        {% set reverse = subnet | ipaddr('revdns') | regex_replace('^[0-9]+\\.', '') %}
+      {% elif subnet | ipaddr('prefix') == 16 %}
+        {% set reverse = subnet | ipaddr('revdns') | regex_replace('^[0-9]+\\.[0-9]+\\.', '') %}
+      {% elif subnet | ipaddr('prefix') == 8 %}
+        {% set reverse = subnet | ipaddr('revdns') | regex_replace('^[0-9]+\\.[0-9]+\\.[0-9]+\\.', '') %}
+      {% else %}
+# skipping unhandled prefix {{ subnet | ipaddr('prefix') }}
+      {% endif %}
+      {% if reverse is defined %}
+# {{ reverse }}
+stub-zone:
+  name: "{{reverse}}"
+  stub-addr: {{stub_dns}}
+      {% endif %}
+    {% endfor %}
+  {% endfor %}
+
+  {% for vlan in vlans %}
+    {# this assumes that default vlan is always under tld, which may be wrong in #}
+    {# some cases. Fix when introducing per-vlan dns domains                     #}
+    {% if vlan == "default" %}
+stub-zone:
+  name: "{{dns.domain}}"
+  stub-addr: {{stub_dns}}
+  {% endif %}
+stub-zone:
+  name: "{{vlan}}.{{dns.domain}}"
+  stub-addr: {{stub_dns}}
+  {% endfor %}
+{% endif %}
 include: /etc/unbound/conf.d/*.conf
 
 # Stub zones.
