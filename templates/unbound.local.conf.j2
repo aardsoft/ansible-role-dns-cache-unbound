@@ -45,7 +45,8 @@ local-data: '{{dns_name}} TXT "{{iface.label}}"'
            {% if alias.endswith('.') %}
 local-data: "{{alias}} IN A {{iface.ipv4 | ipaddr('address')}}"
            {% elif domain_name is defined %}
-local-data: "{{alias}}.{{domain_name}}. IN A {{iface.ipv4 | ipaddr('address')}}"
+           {# domain_name is generated above, and always ends with a . #}
+local-data: "{{alias}}.{{domain_name}} IN A {{iface.ipv4 | ipaddr('address')}}"
            {% else %}
 local-data: "{{alias}}.{{dns_domain}}. IN A {{iface.ipv4 | ipaddr('address')}}"
            {% endif %}
