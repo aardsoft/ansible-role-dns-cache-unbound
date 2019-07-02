@@ -77,6 +77,8 @@ server:
       # {{ interface }}
       interface: {{ if_address }}
       access-control: {{ if_networknetmask| ipaddr('net') }} allow
+    {% else %}
+      # no ipv4 address for {{ interface }}
     {% endif %}
     {% if hostvars[inventory_hostname]['ansible_' + interface]['ipv6'] is defined and
        hostvars[inventory_hostname]['ansible_' + interface]['ipv6']['address'] is defined %}
