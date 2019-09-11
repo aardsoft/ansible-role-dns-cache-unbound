@@ -64,7 +64,7 @@ server:
 
 {# this adds all local interfaces of this machine as listen interfaces and #}
 {# allows access from the matching subnet #}
-{% for interface in ansible_interfaces if interface != 'lo' and interface != 'sit0' %}
+{% for interface in ansible_interfaces|sort if interface != 'lo' and interface != 'sit0' %}
   {% if unbound_skip_interfaces is defined and interface in unbound_skip_interfaces %}
       # skipping interface: {{ interface }}
   {% else %}
