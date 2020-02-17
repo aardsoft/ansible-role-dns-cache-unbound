@@ -39,10 +39,11 @@
 - name: update unbound configuration
   template:
     src: unbound.conf.j2
-    dest: /etc/unbound/unbound.conf
+    dest: /etc/unbound/unbound.conf.new
     owner: root
     group: root
     mode: 0644
+  register: status
   notify:
     - restart unbound
 
@@ -61,6 +62,21 @@
     dest: /etc/unbound/conf.d/unbound.stub.conf
   when: >
     unbound_stub_zones is defined
+  notify:
+    - restart unbound
+
+- name: verify unbound configuration
+  shell: /usr/sbin/unbound-checkconf /etc/unbound/unbound.conf.new
+  when: status is changed
+
+- name: update unbound configuration
+  copy:
+    src: /etc/unbound/unbound.conf.new
+    dest: /etc/unbound/unbound.conf
+    owner: root
+    group: root
+    mode: 0644
+    remote_src: yes
   notify:
     - restart unbound
 
