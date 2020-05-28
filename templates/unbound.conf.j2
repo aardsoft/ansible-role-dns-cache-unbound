@@ -510,6 +510,11 @@ server:
         # you need to do the reverse notation yourself.
         # local-data-ptr: "192.0.2.3 www.example.com"
 
+{% if unbound_extra_server_options is defined %}
+  {% for _option in unbound_extra_server_options %}
+        {{_option}}
+  {% endfor %}
+{% endif %}
         include: /etc/unbound/local.d/*.conf
 
         # service clients over SSL (on the TCP sockets), with plain DNS inside
