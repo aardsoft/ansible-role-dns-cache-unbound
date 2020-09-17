@@ -34,7 +34,8 @@ local-zone: "{{vlan}}.{{dns_domain}}." static
      {% else %}
        {% set dns_name = node + '.' + dns_domain %}
      {% endif %}
-     {% if iface.ipv4 is defined %}
+     {% if iface.ipv4 is defined and
+        (iface.nodns is undefined or iface.nodns == false) %}
 local-data: "{{dns_name}} IN A {{iface.ipv4 | ipaddr('address')}}"
 local-data-ptr: "{{iface.ipv4 | ipaddr('address')}} {{dns_name}}"
        {% if iface.label is defined %}
@@ -53,7 +54,7 @@ local-data: "{{alias}}.{{dns_domain}}. IN A {{iface.ipv4 | ipaddr('address')}}"
          {% endfor %}
        {% endif %}
      {% else %}
-# skipping {{dns_name}}
+# skipping {{dns_name}} {{iface.ipv4|default("without IP")}}
      {% endif %}
    {% endfor %}
  {% endif %}
