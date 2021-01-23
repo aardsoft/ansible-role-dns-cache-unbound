@@ -576,10 +576,10 @@ remote-control:
 {% if dns.update({'domain': dns_domain}) %}{% endif %}
 {% endif %}
 
-
 # Dynamically created stub zones from dhcp networks, for use with
 # name servers other than unbound
-{% if stub_dns is defined and dhcp_networks is defined %}
+# TODO: add support for list in stub_dns
+{% if stub_dns is defined and dhcp_networks is defined and unbound.skip_autostub|default(False)==False %}
   {% for net in dhcp_networks %}
     {% for subnet in dhcp_networks[net].subnets %}
       {% if subnet | ipaddr('prefix') == 24 %}
