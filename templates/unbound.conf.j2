@@ -2,7 +2,9 @@
 # {{ ansible_managed }}
 #
 # See the unbound.conf(5) man page.
-
+{% if unbound is undefined %}
+{% set unbound = {} %}
+{% endif %}
 # The server clause sets the main parameters.
 server:
         # whitespace is not necessary, but looks cleaner.
@@ -644,10 +646,10 @@ include: /etc/unbound/conf.d/*.conf
 #       name: "example.org"
 #       forward-host: fwd.example.com
 
-{% if dns_forwarders is defined %}
+{% if dns_forwarders is defined or unbound.dns_forwarders is defined %}
 forward-zone:
         name: "."
-{% for server in dns_forwarders %}
+{% for server in dns_forwarders|default(unbound.dns_forwarders) %}
         forward-addr: {{ server }}
 {% endfor %}
 {% endif %}
