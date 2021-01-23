@@ -58,6 +58,8 @@ server:
 
 {% if unbound_skip_interfaces is undefined and dns_skip_interfaces is defined %}
 {% set unbound_skip_interfaces = dns_skip_interfaces %}
+{% elif unbound_skip_interfaces is undefined and unbound.skip_interfaces is defined %}
+{% set unbound_skip_interfaces = dns_skip_interfaces %}
 {% endif %}
 
 {% if unbound_skip_interfaces is undefined and skip_interfaces is defined %}
