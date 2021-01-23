@@ -59,6 +59,7 @@
     group: root
     mode: 0644
     remote_src: yes
+  when: status is changed
   notify:
     - restart unbound
 
