@@ -47,16 +47,6 @@
   notify:
     - restart unbound
 
-
-- name: create local stub zones
-  template:
-    src: unbound.stub.conf.j2
-    dest: /etc/unbound/conf.d/unbound.stub.conf
-  when: >
-    unbound_stub_zones is defined
-  notify:
-    - restart unbound
-
 - name: verify unbound configuration
   shell: /usr/sbin/unbound-checkconf /etc/unbound/unbound.conf.new
   when: status is changed

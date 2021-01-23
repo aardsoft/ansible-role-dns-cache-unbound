@@ -684,20 +684,26 @@ stub-zone:
   stub-addr: {{stub_dns}}
   {% endfor %}
 {% endif %}
-{% if unbound.stub_zones is defined %}
- {% for _zone in unbound.stub_zones %}
+
+{% if unbound.stub_zones is defined or
+      unbound_stub_zones is defined %}
+  {% set _stub_zones=unbound_stub_zones|default(unbound.stub_zones) %}
+  {% for _zone in _stub_zones %}
 stub-zone:
-  name: {{unbound.stub_zones[_zone].name|default(_zone)}}
-  {% if unbound.stub_zones[_zone].addr is defined %}
-  stub-addr: {{unbound.stub_zones[_zone].addr}}
-  {% elif unbound.stub_zones[_zone].addrs is defined %}
-    {% for _addr in unbound.stub_zones[_zone].addrs %}
+  name: {{_stub_zones[_zone].name|default(_zone)}}
+    {% if _stub_zones[_zone].addr is defined %}
+  stub-addr: {{_stub_zones[_zone].addr}}
+    {% elif _stub_zones[_zone].addrs is defined %}
+      {% for _addr in _stub_zones[_zone].addrs %}
   stub-addr: {{_addr}}
-    {% endfor %}
-  {% endif %}
- {% endfor %}
+      {% endfor %}
+    {% endif %}
+  {% endfor %}
 {% endif %}
+
+{% if unbound.include_conf_d|default(False)==True %}
 include: /etc/unbound/conf.d/*.conf
+{% endif %}
 
 # Stub zones.
 # Create entries like below, to make all queries for 'example.com' and
