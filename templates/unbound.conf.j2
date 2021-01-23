@@ -517,7 +517,78 @@ server:
         {{_option}}
   {% endfor %}
 {% endif %}
+
+{% if dns_domain is defined and
+    unbound.skip_autolocal|default(False)==False %}
+        local-zone: "{{dns_domain}}." static
+  {% for vlan in vlans %}
+        local-zone: "{{vlan}}.{{dns_domain}}." static
+  {% endfor %}
+# TODO: allow specifying a dns name
+  {% for node in network_nodes %}
+    {# network_nodes is a dict -> iteration is only over keys, not items/objects #}
+    {% if network_nodes[node].networks is defined %}
+      {% for network in network_nodes[node].networks %}
+        {# this loops only once, but is the easiest way to resolve network names (if1, ..) #}
+        {% set iface = network_nodes[node].networks[network] %}
+        {# if a dns attribute is used take this as hostname #}
+        {# without trailing dot the dns_domain will still be appended (but not the vlan) #}
+        {% if iface.dns is defined %}
+          {% if iface.dns.endswith('.') %}
+            {% set dns_name = iface.dns %}
+          {% elif iface.vlan is defined %}
+            {# NOTE: this requires a string as vlan name #}
+            {% set dns_name = iface.dns + '.' + iface.vlan + '.' + dns_domain + '.' %}
+            {% set domain_name = iface.vlan + '.' + dns_domain + '.' %}
+          {% else %}
+            {% set dns_name = iface.dns + '.' + dns_domain + '.' %}
+          {% endif %}
+            {# with a vlan the hostname is name.vlan.dns_domain #}
+        {% elif iface.vlan is defined %}
+          {% set dns_name = node + '.' + iface.vlan + '.' + dns_domain %}
+          {% set domain_name = iface.vlan + '.' + dns_domain + '.' %}
+          {# without it is name.dns_domain #}
+        {% else %}
+          {% set dns_name = node + '.' + dns_domain %}
+        {% endif %}
+        {% if iface.ipv4 is defined and
+              (iface.nodns is undefined or iface.nodns == false) %}
+        local-data: "{{dns_name}} IN A {{iface.ipv4 | ipaddr('address')}}"
+        local-data-ptr: "{{iface.ipv4 | ipaddr('address')}} {{dns_name}}"
+          {% if iface.label is defined %}
+        local-data: '{{dns_name}} TXT "{{iface.label}}"'
+          {% endif %}
+          {% if iface.dns_aliases is defined %}
+            {% for alias in iface.dns_aliases %}
+              {% if alias.endswith('.') %}
+        local-data: "{{alias}} IN A {{iface.ipv4 | ipaddr('address')}}"
+              {% elif domain_name is defined %}
+                {# domain_name is generated above, and always ends with a . #}
+        local-data: "{{alias}}.{{domain_name}} IN A {{iface.ipv4 | ipaddr('address')}}"
+              {% else %}
+        local-data: "{{alias}}.{{dns_domain}}. IN A {{iface.ipv4 | ipaddr('address')}}"
+              {% endif %}
+            {% endfor %}
+          {% endif %}
+        {% else %}
+        # skipping {{dns_name}} {{iface.ipv4|default("without IP")}}
+        {% endif %}
+      {% endfor %}
+    {% endif %}
+  {% endfor %}
+{% endif %}
+
+{% if unbound.local_zones is defined or
+      unbound_local_zones is defined %}
+  {% set _local_zones=unbound_local_zones|default(unbound.local_zones) %}
+  {% for _zone in _local_zones %}
+        local-zone: "{{_local_zones[_zone].name|default(_zone)}}" {{_local_zones[_zone].type}}
+  {% endfor %}
+{% endif %}
+
+{% if unbound.include_local_d|default(False)==True %}
         include: /etc/unbound/local.d/*.conf
+{% endif %}
 
         # service clients over SSL (on the TCP sockets), with plain DNS inside
         # the SSL stream.  Give the certificate to use and private key.

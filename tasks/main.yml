@@ -47,14 +47,6 @@
   notify:
     - restart unbound
 
-- name: create local unbound zones
-  template:
-    src: unbound.local.conf.j2
-    dest: /etc/unbound/local.d/unbound.local.conf
-  when: >
-    dns_domain is defined
-  notify:
-    - restart unbound
 
 - name: create local stub zones
   template:
