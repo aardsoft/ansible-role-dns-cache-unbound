@@ -10,24 +10,24 @@ server:
         # whitespace is not necessary, but looks cleaner.
 
         # verbosity number, 0 is least verbose. 1 is default.
-        verbosity: 1
+        verbosity: {{unbound.core.verbosity|default(1)}}
 
         # print statistics to the log (for every thread) every N seconds.
         # Set to "" or 0 to disable. Default is disabled.
         # Needed for munin plugin
-        statistics-interval: 0
+        statistics-interval: {{unbound.core.statistics_interval|default(0)}}
 
         # enable cumulative statistics, without clearing them after printing.
         # Needed for munin plugin
-        statistics-cumulative: yes
+        statistics-cumulative: {{unbound.core.statistics_cumulative|default('yes')}}
 
         # enable extended statistics (query types, answer codes, status)
         # printed from unbound-control. default off, because of speed.
         # Needed for munin plugin
-        extended-statistics: yes
+        extended-statistics: {{unbound.core.extended_statistics|default('yes')}}
 
         # number of threads to create. 1 disables threading.
-        num-threads: 2
+        num-threads: {{unbound.core.num_thrteads|default(2)}}
 
         # specify the interfaces to answer queries from by ip-address.
         # The default is to listen to localhost (127.0.0.1 and ::1).
@@ -104,7 +104,7 @@ server:
         # NOTE: Enable this option when specifying interface 0.0.0.0 or ::0
         # NOTE: Disabled per Fedora policy not to listen to * on default install
         # NOTE: If deploying on non-default port, eg 80/443, this needs to be disabled
-        interface-automatic: no
+        interface-automatic: {{unbound.core.interface_automatic|default('no')}}
 
         # port to answer queries from
         # port: 53
@@ -123,7 +123,7 @@ server:
         # permit unbound to use this port number or port range for
         # making outgoing queries, using an outgoing interface.
         # Only ephemeral ports are allowed by SElinux
-        outgoing-port-permit: 32768-65535
+        outgoing-port-permit: {{unbound.core.outgoing_port_permit|default('32768-65535')}}
 
         # deny unbound the use this of port number or port range for
         # making outgoing queries, using an outgoing interface.
@@ -131,7 +131,7 @@ server:
         # other server on this computer needs. The default is to avoid
         # IANA-assigned port numbers.
         # Our SElinux policy does not allow non-ephemeral ports to be used
-        outgoing-port-avoid: 0-32767
+        outgoing-port-avoid: {{unbound.core.outgoing_port_avoid|default('0-32767')}}
 
         # number of outgoing simultaneous tcp buffers to hold per thread.
         # outgoing-num-tcp: 10
@@ -154,7 +154,7 @@ server:
         # Maximum UDP response size (not applied to TCP response).
         # Suggested values are 512 to 4096. Default is 4096. 65536 disables it.
         # 3072 causes +dnssec any isc.org queries to need TC=1. Helps mitigating DDOS
-        max-udp-size: 3072
+        max-udp-size: {{unbound.core.max_udp_size|default(3072)}}
 
         # buffer size for handling DNS data. No messages larger than this
         # size can be sent or received, by UDP or TCP. In bytes.
@@ -205,18 +205,18 @@ server:
         # infra-cache-numhosts: 10000
 
         # Enable IPv4, "yes" or "no".
-        do-ip4: yes
+        do-ip4: {{unbound.core.do_ip4|default('yes')}}
 
         # Enable IPv6, "yes" or "no".
-        # do-ip6: yes
+        do-ip6: {{unbound.core.do_ip6|default('no')}}
 
         # Enable UDP, "yes" or "no".
         # NOTE: if setting up an unbound on tls443 for public use, you might want to
         # disable UDP to avoid being used in DNS amplification attacks.
-        do-udp: yes
+        do-udp: {{unbound.core.do_udp|default('yes')}}
 
         # Enable TCP, "yes" or "no".
-        do-tcp: yes
+        do-tcp: {{unbound.core.do_tcp|default('yes')}}
 
         # upstream connections use TCP only (and no UDP), "yes" or "no"
         # useful for tunneling scenarios, default no.
@@ -249,33 +249,33 @@ server:
         #
         # If you give "" no chroot is performed. The path must not end in a /.
         # chroot: "/var/lib/unbound"
-        chroot: ""
+        chroot: "{{unbound.core.chroot|default('')}}"
 
         # if given, user privileges are dropped (after binding port),
         # and the given username is assumed. Default is user "unbound".
         # If you give "" no privileges are dropped.
-        username: "unbound"
+        username: "{{unbound.core.username|default('unbound')}}"
         # the working directory. The relative files in this config are
         # relative to this directory. If you give "" the working directory
         # is not changed.
-        directory: "/etc/unbound"
+        directory: "{{unbound.core.directory|default('/etc/unbound')}}"
 
         # the log file, "" means log to stderr.
         # Use of this option sets use-syslog to "no".
-        logfile: ""
+        logfile: "{{unbound.core.logfile|default('')}}"
 
         # Log to syslog(3) if yes. The log facility LOG_DAEMON is used to
         # log to, with identity "unbound". If yes, it overrides the logfile.
-        use-syslog: no
+        use-syslog: {{unbound.core.use_syslog|default('no')}}
 
         # print UTC timestamp in ascii to logfile, default is epoch in seconds.
-        log-time-ascii: yes
+        log-time-ascii: {{unbound.core.log_time_ascii|default('yes')}}
 
         # print one line with time, IP, name, type, class for every query.
-        log-queries: no
+        log-queries: {{unbound.core.log_queries|default('no')}}
 
         # the pid file. Can be an absolute path outside of chroot/work dir.
-        pidfile: "/var/run/unbound/unbound.pid"
+        pidfile: "{{unbound.core.pidfile|default('/var/run/unbound/unbound.pid')}}"
 
         # file to read root hints from.
         # get one from ftp://FTP.INTERNIC.NET/domain/named.cache
@@ -310,27 +310,27 @@ server:
         # harden-large-queries: no
 
         # Harden against out of zone rrsets, to avoid spoofing attempts.
-        harden-glue: no
+        harden-glue: {{unbound.core.harden_glue|default('no')}}
 
         # Harden against receiving dnssec-stripped data. If you turn it
         # off, failing to validate dnskey data for a trustanchor will
         # trigger insecure mode for that zone (like without a trustanchor).
         # Default on, which insists on dnssec data for trust-anchored zones.
-        harden-dnssec-stripped: no
+        harden-dnssec-stripped: {{unbound.core.harden_dnssec_stripped|default('no')}}
 
         # Harden against queries that fall under dnssec-signed nxdomain names.
-        harden-below-nxdomain: no
+        harden-below-nxdomain: {{unbound.core.harden_below_nxdomain|default('no')}}
 
         # Harden the referral path by performing additional queries for
         # infrastructure data.  Validates the replies (if possible).
         # Default off, because the lookups burden the server.  Experimental
         # implementation of draft-wijngaards-dnsext-resolver-side-mitigation.
-        harden-referral-path: no
+        harden-referral-path: {{unbound.core.harden_referral_path|default('no')}}
 
         # Use 0x20-encoded random bits in the query to foil spoof attempts.
         # This feature is an experimental implementation of draft dns-0x20.
         # (this now fails on all GoDaddy customer domains, so disabled)
-        use-caps-for-id: no
+        use-caps-for-id: {{unbound.core.use_caps_for_id|default('no')}}
 
         # Enforce privacy of these addresses. Strips them away from answers.
         # It may cause DNSSEC validation to additionally mark it as bogus.
@@ -353,7 +353,7 @@ server:
         # threshold, a warning is printed and a defensive action is taken,
         # the cache is cleared to flush potential poison out of it.
         # A suggested value is 10000000, the default is 0 (turned off).
-        unwanted-reply-threshold: 10000000
+        unwanted-reply-threshold: {{unbound.core.unwanted_reply_threshold|default(10000000)}}
 
         # Do not query the following addresses. No DNS queries are sent there.
         # List one address per entry. List classless netblocks with /size,
@@ -362,25 +362,25 @@ server:
 
         # if yes, the above default do-not-query-address entries are present.
         # if no, localhost can be queried (for testing and debugging).
-        do-not-query-localhost: no
+        do-not-query-localhost: {{unbound.core.do_not_query_localhost|default('no')}}
 
         # if yes, perform prefetching of almost expired message cache entries.
-        prefetch: no
+        prefetch: {{unbound.core.prefetch|default('no')}}
 
         # if yes, perform key lookups adjacent to normal lookups.
-        prefetch-key: no
+        prefetch-key: {{unbound.core.prefetch_key|default('no')}}
 
         # if yes, Unbound rotates RRSet order in response.
-        rrset-roundrobin: yes
+        rrset-roundrobin: {{unbound.core.rrset_roundrobin|default('yes')}}
 
         # if yes, Unbound doesn't insert authority/additional sections
         # into response messages when those sections are not required.
-        minimal-responses: yes
+        minimal-responses: {{unbound.core.minimal_responses|default('yes')}}
 
         # module configuration of the server. A string with identifiers
         # separated by spaces. "iterator" or "validator iterator"
         # module-config: "validator iterator"
-        module-config: "iterator"
+        module-config: "{{unbound.core.module_config|default('iterator')}}"
 
         # File with DLV trusted keys. Same format as trust-anchor-file.
         # There can be only one DLV configured, it is trusted from root down.
@@ -435,7 +435,7 @@ server:
         # unsecure data. Useful to shield the users of this validator from
         # potential bogus data in the additional section. All unsigned data
         # in the additional section is removed from secure messages.
-        val-clean-additional: yes
+        val-clean-additional: {{unbound.core.val_clean_additional|default('yes')}}
 
         # Turn permissive mode on to permit bogus messages. Thus, messages
         # for which security checks failed will be returned to clients,
@@ -443,11 +443,11 @@ server:
         # result in interesting log files and possibly the AD bit in
         # replies if the message is found secure. The default is off.
         # NOTE: TURNING THIS ON DISABLES ALL DNSSEC SECURITY
-        val-permissive-mode: yes
+        val-permissive-mode: {{unbound.core.val_permissive_mode|default('yes')}}
 
         # Have the validator log failed validations for your diagnosis.
         # 0: off. 1: A line per failed user query. 2: With reason and bad IP.
-        val-log-level: 1
+        val-log-level: {{unbound.core.val_log_level|default(1)}}
 
         # It is possible to configure NSEC3 maximum iteration counts per
         # keysize. Keep this table very short, as linear search is done.
@@ -526,7 +526,7 @@ server:
   {% for vlan in vlans %}
         local-zone: "{{vlan}}.{{dns_domain}}." static
   {% endfor %}
-# TODO: allow specifying a dns name
+{# TODO: allow specifying a dns name #}
   {% for node in network_nodes %}
     {# network_nodes is a dict -> iteration is only over keys, not items/objects #}
     {% if network_nodes[node].networks is defined %}
@@ -616,7 +616,7 @@ remote-control:
         # Enable remote control with unbound-control(8) here.
         # set up the keys and certificates with unbound-control-setup.
         # Note: required for unbound-munin package
-        control-enable: no
+        control-enable: {{unbound.remote_control.control_enable|default('no')}}
 
         # what interfaces are listened to for remote control.
         # give 0.0.0.0 and ::0 to listen to all interfaces.
