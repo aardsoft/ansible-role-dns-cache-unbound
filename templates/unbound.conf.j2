@@ -66,8 +66,17 @@ server:
 {% set unbound_skip_interfaces = skip_interfaces %}
 {% endif %}
 
+{% if unbound_extra_access_networks is undefined and unbound.access_networks is defined %}
+{% set unbound_extra_access_networks = unbound.access_networks %}
+{% endif %}
+
+{% if unbound_extra_listen_interfaces is undefined and unbound.listen_interfaces is defined %}
+{% set unbound_extra_listen_interfaces = unbound.listen_interfaces %}
+{% endif %}
+
 {# this adds all local interfaces of this machine as listen interfaces and #}
 {# allows access from the matching subnet #}
+
 {% for interface in ansible_interfaces|sort if interface != 'lo' and interface != 'sit0' %}
   {% if unbound_skip_interfaces is defined and interface in unbound_skip_interfaces %}
       # skipping interface: {{ interface }}
@@ -79,17 +88,32 @@ server:
       {% set if_netmask = hostvars[inventory_hostname]['ansible_' + interface]['ipv4']['netmask'] %}
       {% set if_networknetmask = if_network + '/' + if_netmask %}
       # {{ interface }}
+      {% if unbound.automatic_listen_interfaces is undefined or
+            unbound.automatic_listen_interfaces == true %}
       interface: {{ if_address }}
+      {% endif %}
+      {% if unbound.automatic_access_control is undefined or
+            unbound.automatic_access_control == true %}
       access-control: {{ if_networknetmask| ipaddr('net') }} allow
+      {% endif %}
     {% else %}
       # no ipv4 address for {{ interface }}
     {% endif %}
     {% if hostvars[inventory_hostname]['ansible_' + interface]['ipv6'] is defined and
        hostvars[inventory_hostname]['ansible_' + interface]['ipv6']['address'] is defined %}
+      {% if unbound.automatic_listen_interfaces is undefined or
+            unbound.automatic_listen_interfaces == true %}
       interface: {{ hostvars[inventory_hostname]['ansible_' + interface]['ipv6']['address'] }}
+      {% endif %}
     {% endif %}
   {% endif %}
 {% endfor %}
+
+{% if unbound_extra_listen_interfaces is defined %}
+ {% for iface in unbound_extra_listen_interfaces %}
+       interface: {{ iface }}
+ {% endfor %}
+{% endif %}
 
 {% if unbound_extra_access_networks is defined %}
  {% for net in unbound_extra_access_networks %}
