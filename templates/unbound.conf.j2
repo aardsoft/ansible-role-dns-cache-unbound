@@ -574,6 +574,37 @@ server:
           {% set dns_name = node + '.' + iface.vlan + '.' + dns_domain %}
           {% set domain_name = iface.vlan + '.' + dns_domain + '.' %}
           {# without it is name.dns_domain #}
+          {# handle link lookup here #}
+        {% elif network_nodes[node].type is defined and (network_nodes[node].type == "lxc" or network_nodes[node].type == "kvm") and network_nodes[node].networks[network].link is defined %}
+          {# virtual nodes are interesting, as first the network devices on the #}
+          {# physical host need to be looked up, followed by the same discovery #}
+          {# dance as above with the bridge/...                                 #}
+          {% set tmp = {} %}
+          {% set tmp_node = network_nodes[node].machine %}
+          {% set tmp_link = network_nodes[node].networks[network].link %}
+          {# in rare cases the bridge itself might have a vlan defined #}
+          {% if network_nodes[tmp_node].networks[tmp_link].vlan is defined %}
+            {% if tmp.update({'vlan': network_nodes[tmp_node].networks[tmp_link].vlan}) %}{% endif %}
+          {% else %}
+          {# for other cases, loop over the network configuration to find the   #}
+          {# interface under the bridge                                         #}
+            {% for tmp_net in network_nodes[tmp_node].networks %}
+              {% set tmp_iface = network_nodes[tmp_node].networks[tmp_net] %}
+              {% if tmp_iface.bridge is defined and tmp_iface.bridge == tmp_link %}
+                {% if tmp_iface.vlan is defined and tmp_iface.vlan != "default" %}
+                  {% if tmp.update({'vlan': tmp_iface.vlan}) %}{% endif %}
+                 {% endif %}
+              {% endif %}
+            {% endfor %}
+          {% endif %}
+          {% if tmp.vlan is defined %}
+            {% set dns_name = node + '.' + tmp.vlan + '.' + dns_domain + '.' %}
+            {% set domain_name = tmp.vlan + '.' + dns_domain + '.' %}
+          {% else %}
+            {# fallback for not explicitely specified default vlan #}
+            {% set dns_name = node + '.' + dns_domain + '.' %}
+            {% set domain_name = dns_domain + '.' %}
+          {% endif %}
         {% else %}
           {% set dns_name = node + '.' + dns_domain %}
         {% endif %}
