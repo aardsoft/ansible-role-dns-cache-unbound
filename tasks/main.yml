@@ -1,28 +1,10 @@
-- name: Install unbound (Debian)
-  apt:
-    name: "unbound"
-    state: present
-    update_cache: yes
-    cache_valid_time: 3600
-  when: ansible_os_family == "Debian"
+- set_fact:
+    role_packages:
+      - unbound
 
-- name: Install unbound (SuSE)
-  zypper:
-    name: "unbound"
-    state: present
-  when: ansible_os_family == "Suse"
-
-- name: Install unbound (RedHat/dnf)
-  dnf:
-    name: "unbound"
-    state: present
-  when: ansible_os_family == "RedHat" and ansible_pkg_mgr == "dnf"
-
-- name: Install unbound (RedHat/yum)
-  yum:
-    name: "unbound"
-    state: present
-  when: ansible_os_family == "RedHat" and ansible_pkg_mgr == "yum"
+- include_role:
+    name: basic-host
+    tasks_from: install_packages
 
 # RedHat has a hard coded call to unbound-anchor in the service file
 # Without being able to update that it blocks startup for almost a minute.
