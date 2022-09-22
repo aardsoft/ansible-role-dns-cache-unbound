@@ -23,9 +23,9 @@
 - name: update unbound configuration
   template:
     src: unbound.conf.j2
-    dest: /etc/unbound/unbound.conf.new
-    owner: root
-    group: root
+    dest: "{{_unbound_new_conf|default('/etc/unbound/unbound.conf.new')}}"
+    owner: "{{_unbound_new_conf_user|default('root')}}"
+    group: "{{_unbound_new_conf_group|default('root')}}"
     mode: 0644
   register: status
   notify:
