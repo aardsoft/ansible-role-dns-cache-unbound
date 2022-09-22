@@ -1,2 +1,3 @@
 - name: restart unbound
   systemd: name=unbound state=restarted daemon_reload=yes
+  when: not ansible_unit_test
