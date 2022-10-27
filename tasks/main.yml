@@ -3,7 +3,7 @@
       - unbound
 
 - include_role:
-    name: basic-host
+    name: data-utilities
     tasks_from: install_packages
   when: not ansible_unit_test
 
