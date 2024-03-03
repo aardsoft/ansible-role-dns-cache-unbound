@@ -1,0 +1,16 @@
+#jinja2: lstrip_blocks: True
+# {{ ansible_managed }}
+# {{stub_zone}}
+domain {{stub_zone.value['name']}}
+{% if stub_resolver is defined %}
+nameserver {{stub_resolver}}
+{% else %}
+  {% if stub_zone.value['addr'] is defined %}
+nameserver {{stub_zone.value['addr']}}
+  {% endif %}
+  {% if stub_zone.value['addrs'] is defined %}
+    {% for addr in stub_zone.value['addrs'] %}
+nameserver {{addr}}
+    {% endfor %}
+  {% endif %}
+{% endif %}

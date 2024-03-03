@@ -282,7 +282,7 @@ server:
         # the working directory. The relative files in this config are
         # relative to this directory. If you give "" the working directory
         # is not changed.
-        directory: "{{unbound.core.directory|default('/etc/unbound')}}"
+        directory: "{{_unbound_conf_prefix}}"
 
         # the log file, "" means log to stderr.
         # Use of this option sets use-syslog to "no".
@@ -299,7 +299,9 @@ server:
         log-queries: {{unbound.core.log_queries|default('no')}}
 
         # the pid file. Can be an absolute path outside of chroot/work dir.
+{% if ansible_os_family != "Darwin" %}
         pidfile: "{{unbound.core.pidfile|default('/var/run/unbound/unbound.pid')}}"
+{% endif %}
 
         # file to read root hints from.
         # get one from ftp://FTP.INTERNIC.NET/domain/named.cache
@@ -647,7 +649,7 @@ server:
 {% endif %}
 
 {% if unbound.include_local_d|default(False)==True %}
-        include: /etc/unbound/local.d/*.conf
+        include: {{_unbound_conf_prefix}}/local.d/*.conf
 {% endif %}
 
         # service clients over SSL (on the TCP sockets), with plain DNS inside
@@ -762,7 +764,7 @@ stub-zone:
 {% endif %}
 
 {% if unbound.include_conf_d|default(False)==True %}
-include: /etc/unbound/conf.d/*.conf
+include: {{_unbound_conf_prefix}}/unbound/conf.d/*.conf
 {% endif %}
 
 # Stub zones.

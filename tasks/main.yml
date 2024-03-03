@@ -1,12 +1,43 @@
 - set_fact:
     role_packages:
       - unbound
-    unbound_
+    _unbound_prefix: /usr
+    _unbound_conf_prefix: "{{unbound.core.directory|default('/etc/unbound')}}"
+
+- set_fact:
+    _unbound_prefix: "{{homebrew_prefix}}"
+    _unbound_conf_prefix: "{{unbound.core.directory|default(homebrew_prefix+'/etc/unbound')}}"
+    _unbound_new_conf_group: wheel
+    _unbound_group: wheel
+  when: >
+    ansible_os_family == "Darwin"
+
+- set_fact:
+    _unbound_home: "/var/unbound"
+  when: >
+    ansible_os_family == "Darwin"
 
 - include_role:
     name: data-utilities
     tasks_from: install_packages
   when: not ansible_unit_test
+
+- name: add groups (Darwin)
+  group:
+    name: "{{_unbound_group}}"
+    system: yes
+  when: >
+    ansible_os_family == "Darwin"
+
+- name: add user (Darwin)
+  user:
+    name: "{{_unbound_user|default('root')}}"
+    group: "{{_unbound_group}}"
+    createhome: yes
+    home: "{{_unbound_home}}"
+    system: yes
+  when: >
+    ansible_os_family == "Darwin"
 
 # RedHat has a hard coded call to unbound-anchor in the service file
 # Without being able to update that it blocks startup for almost a minute.
@@ -19,12 +50,14 @@
     mode: 0644
   notify:
     - restart unbound
-  when: not ansible_unit_test
+  when: >
+    not ansible_unit_test and
+    ansible_os_family != "Darwin"
 
 - name: update unbound configuration
   template:
     src: unbound.conf.j2
-    dest: "{{_unbound_new_conf|default('/etc/unbound/unbound.conf.new')}}"
+    dest: "{{_unbound_new_conf|default(_unbound_conf_prefix+'/unbound.conf.new')}}"
     owner: "{{_unbound_new_conf_user|default('root')}}"
     group: "{{_unbound_new_conf_group|default('root')}}"
     mode: 0644
@@ -33,16 +66,16 @@
     - restart unbound
 
 - name: verify unbound configuration
-  shell: /usr/sbin/unbound-checkconf /etc/unbound/unbound.conf.new
+  shell: "{{_unbound_prefix}}/sbin/unbound-checkconf  {{_unbound_new_conf|default(_unbound_conf_prefix+'/unbound.conf.new')}}"
   when: status is changed and
         not ansible_unit_test
 
 - name: update unbound configuration
   copy:
-    src: "{{_unbound_new_conf|default('/etc/unbound/unbound.conf.new')}}"
-    dest: /etc/unbound/unbound.conf
-    owner: "{{_unbound_new_conf_user|default('root')}}"
-    group: "{{_unbound_new_conf_group|default('root')}}"
+    src: "{{_unbound_new_conf|default(_unbound_conf_prefix+'/unbound.conf.new')}}"
+    dest: "{{_unbound_conf_prefix}}/unbound.conf"
+    owner: "{{_unbound_user|default('root')}}"
+    group: "{{_unbound_group|default('root')}}"
     mode: 0644
     remote_src: yes
   when: >
@@ -63,6 +96,33 @@
     (firewalld_available is defined and
     firewalld_available == True)
 
+- name: add stub resolvers (Darwin)
+  include_tasks: darwin_stub_zones.yml
+  when: >
+    ansible_os_family == "Darwin" and
+    (unbound.stub_zones is defined or
+     unbound_stub_zones is defined)
+
 - name: enable unbound
   service: name=unbound enabled=yes
-  when: not ansible_unit_test
+  when: >
+    not ansible_unit_test and
+    ansible_os_family != "Darwin"
+
+# for darwin the service needs to get created first, so easier to go through
+# the service include
+- name: start and enable unbound (Darwin)
+  include_role:
+    name: data-utilities
+    tasks_from: manage_service
+  vars:
+    service:
+      name: "{{_unbound_service|default('fi.aardsoft.unbound')}}"
+      exec_start: "{{_unbound_prefix}}/sbin/unbound -d -c {{_unbound_new_conf|default(_unbound_conf_prefix+'/unbound.conf.new')}}"
+      user: "{{_unbound_user|default('root')}}"
+      standard_output: "{{_unbound_home}}/log.out"
+      standard_error: "{{_unbound_home}}/log.err"
+      working_directory: "{{_unbound_home}}"
+  when: >
+    not ansible_unit_test and
+    ansible_os_family == "Darwin"
