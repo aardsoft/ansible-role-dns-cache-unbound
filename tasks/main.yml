@@ -1,6 +1,7 @@
 - set_fact:
     role_packages:
       - unbound
+    unbound_
 
 - include_role:
     name: data-utilities
@@ -38,10 +39,10 @@
 
 - name: update unbound configuration
   copy:
-    src: /etc/unbound/unbound.conf.new
+    src: "{{_unbound_new_conf|default('/etc/unbound/unbound.conf.new')}}"
     dest: /etc/unbound/unbound.conf
-    owner: root
-    group: root
+    owner: "{{_unbound_new_conf_user|default('root')}}"
+    group: "{{_unbound_new_conf_group|default('root')}}"
     mode: 0644
     remote_src: yes
   when: >
