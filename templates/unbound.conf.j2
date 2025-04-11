@@ -714,7 +714,7 @@ remote-control:
 # TODO: add support for list in stub_dns
 {% if stub_dns is defined and dhcp_networks is defined and unbound.skip_autostub|default(False)==False %}
   {% for net in dhcp_networks %}
-    {% for subnet in dhcp_networks[net].subnets %}
+    {% for subnet in dhcp_networks[net].subnets|default({})|sort %}
       {% if subnet | ipaddr('prefix') == 24 %}
         {% set reverse = subnet | ipaddr('revdns') | regex_replace('^[0-9]+\\.', '') %}
       {% elif subnet | ipaddr('prefix') == 16 %}
