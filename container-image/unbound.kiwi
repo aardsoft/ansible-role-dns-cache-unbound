@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+<image schemaversion="7.5" name="unbound">
+    <description type="system">
+        <author>Bernd Wachter</author>
+        <contact>bwachter-kiwi@aardsoft.fi</contact>
+        <specification>Leap based container for unbound</specification>
+    </description>
+    <preferences>
+        <type image="docker" derived_from="ghcr.io/aardsoft/leap-base:latest">
+          <containerconfig name="ghcr.io/aardsoft/unbound" tag="0.1" additionalnames=":latest" user="unbound">
+            <subcommand execute="/usr/sbin/unbound">
+              <argument name="-d"/>
+            </subcommand>
+          </containerconfig>
+        </type>
+        <version>0.0.1</version>
+        <packagemanager>zypper</packagemanager>
+        <rpm-excludedocs>true</rpm-excludedocs>
+    </preferences>
+    <repository type="rpm-md">
+        <source path="obsrepositories:/"/>
+    </repository>
+    <packages type="image">
+        <package name="unbound"/>
+    </packages>
+</image>

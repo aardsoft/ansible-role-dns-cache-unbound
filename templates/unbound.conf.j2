@@ -147,7 +147,9 @@ server:
         # permit unbound to use this port number or port range for
         # making outgoing queries, using an outgoing interface.
         # Only ephemeral ports are allowed by SElinux
-        outgoing-port-permit: {{unbound.core.outgoing_port_permit|default('32768-65535')}}
+        {% if unbound.core.outgoing_port_permit is defined %}
+        outgoing-port-permit: {{unbound.core.outgoing_port_permit}}
+        {% endif %}
 
         # deny unbound the use this of port number or port range for
         # making outgoing queries, using an outgoing interface.
@@ -155,7 +157,9 @@ server:
         # other server on this computer needs. The default is to avoid
         # IANA-assigned port numbers.
         # Our SElinux policy does not allow non-ephemeral ports to be used
-        outgoing-port-avoid: {{unbound.core.outgoing_port_avoid|default('0-32767')}}
+        {% if unbound.core.outgoing_port_avoid is defined %}
+        outgoing-port-avoid: {{unbound.core.outgoing_port_avoid}}
+        {% endif %}
 
         # number of outgoing simultaneous tcp buffers to hold per thread.
         # outgoing-num-tcp: 10
