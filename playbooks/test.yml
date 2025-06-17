@@ -1,0 +1,45 @@
+- name: print information about the current ansible version
+  hosts: localhost
+  connection: local
+  gather_facts: true
+  tasks:
+    - debug:
+        msg:
+          - "Ansible version: {{ansible_version.full}}"
+          - "Virtualization: {{ansible_virtualization_role}}"
+          - "Virtualization type: {{ansible_virtualization_type}}"
+          - "Home: {{lookup('ansible.builtin.env', 'HOME')}}"
+    - name: clone data-utilities
+      ansible.builtin.git:
+        repo: https://github.com/aardsoft/ansible-data-utilities.git
+        dest: roles/data-utilities
+    - name: set default variables
+      set_fact:
+        _unbound_user: "{{ansible_facts.user_uid}}"
+        _unbound_group: "{{ansible_facts.user_gid}}"
+
+- name: test changes
+  hosts: localhost
+  connection: local
+  gather_facts: true
+  vars:
+    config_prefix: test_results/test_changes
+  pre_tasks:
+    - name: load environment
+      include_vars:
+        file: test.yml
+  roles:
+    - dns-cache-unbound
+
+- name: check for changed test files
+  hosts: localhost
+  connection: local
+  gather_facts: true
+  tasks:
+    - ansible.builtin.shell: |
+        git status --porcelain|grep test_results
+      register: git_status
+      ignore_errors: true
+    - ansible.builtin.fail:
+        msg: "Changes to test results found, fix config generation or commit changes"
+      when: git_status.stdout != ""
