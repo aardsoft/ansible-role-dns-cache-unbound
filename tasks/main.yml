@@ -1,14 +1,43 @@
 - set_fact:
+    _config_only: false
+
+- set_fact:
+    _config_only: true
+  when: >
+    ansible_connection == "local"
+
+- set_fact:
+    config_prefix: ""
+  when: config_prefix is undefined
+
+- set_fact:
+    _unbound_user: root
+  when: _unbound_user is undefined
+
+- set_fact:
+    _unbound_group: root
+  when: >
+    _unbound_group is undefined and
+    ansible_os_family != "Darwin"
+
+- set_fact:
+    _unbound_group: wheel
+  when: >
+    _unbound_group is undefined and
+    ansible_os_family == "Darwin"
+
+- set_fact:
     role_packages:
       - unbound
+  when: _config_only == false
+
+- set_fact:
     _unbound_prefix: /usr
     _unbound_conf_prefix: "{{unbound.core.directory|default('/etc/unbound')}}"
 
 - set_fact:
     _unbound_prefix: "{{homebrew_prefix}}"
     _unbound_conf_prefix: "{{unbound.core.directory|default(homebrew_prefix+'/etc/unbound')}}"
-    _unbound_new_conf_group: wheel
-    _unbound_group: wheel
   when: >
     ansible_os_family == "Darwin"
 
@@ -20,69 +49,84 @@
 - include_role:
     name: data-utilities
     tasks_from: install_packages
-  when: not ansible_unit_test
+  when: _config_only == false
 
 - name: add groups (Darwin)
   group:
     name: "{{_unbound_group}}"
     system: yes
   when: >
-    ansible_os_family == "Darwin"
+    ansible_os_family == "Darwin" and
+    _config_only == false
 
 - name: add user (Darwin)
   user:
-    name: "{{_unbound_user|default('root')}}"
+    name: "{{_unbound_user}}"
     group: "{{_unbound_group}}"
     createhome: yes
     home: "{{_unbound_home}}"
     system: yes
   when: >
-    ansible_os_family == "Darwin"
+    ansible_os_family == "Darwin" and
+    _config_only == false
+
+- name: Mask unbound service to disable trust anchor (RedHat), directory
+  file:
+    state: directory
+    path: "{{config_prefix}}/etc/systemd/system"
+    mode: 0755
+    owner: "{{_unbound_user}}"
+    group: "{{_unbound_group}}"
+  when: >
+    ansible_os_family != "Darwin"
 
 # RedHat has a hard coded call to unbound-anchor in the service file
 # Without being able to update that it blocks startup for almost a minute.
-- name: Mask unbound service to disable trust anchor (RedHat)
+- name: Mask unbound service to disable trust anchor (RedHat), file
   copy:
     src: unbound.service
-    dest: /etc/systemd/system/unbound.service
-    owner: root
-    group: root
+    dest: "{{config_prefix}}/etc/systemd/system/unbound.service"
+    owner: "{{_unbound_user}}"
+    group: "{{_unbound_group}}"
     mode: 0644
   notify:
     - restart unbound
   when: >
-    not ansible_unit_test and
     ansible_os_family != "Darwin"
 
-- name: update unbound configuration
+- name: update unbound configuration, directory
+  file:
+    state: directory
+    dest: "{{config_prefix}}{{_unbound_conf_prefix}}"
+    mode: 0755
+    owner: "{{_unbound_user}}"
+    group: "{{_unbound_group}}"
+
+- name: update unbound configuration, file
   template:
     src: unbound.conf.j2
-    dest: "{{_unbound_new_conf|default(_unbound_conf_prefix+'/unbound.conf.new')}}"
-    owner: "{{_unbound_new_conf_user|default('root')}}"
-    group: "{{_unbound_new_conf_group|default('root')}}"
+    dest: "{{config_prefix}}{{_unbound_conf_prefix}}/unbound.conf.new"
+    owner: "{{_unbound_user}}"
+    group: "{{_unbound_group}}"
     mode: 0644
   register: status
-  notify:
-    - restart unbound
 
 - name: verify unbound configuration
-  shell: "{{_unbound_prefix}}/sbin/unbound-checkconf  {{_unbound_new_conf|default(_unbound_conf_prefix+'/unbound.conf.new')}}"
-  when: status is changed and
-        not ansible_unit_test
+  shell: "{{_unbound_prefix}}/sbin/unbound-checkconf  {{config_prefix}}{{_unbound_conf_prefix}}/unbound.conf.new"
+  when: status is changed and _config_only == false
 
 - name: update unbound configuration
   copy:
-    src: "{{_unbound_new_conf|default(_unbound_conf_prefix+'/unbound.conf.new')}}"
-    dest: "{{_unbound_conf_prefix}}/unbound.conf"
-    owner: "{{_unbound_user|default('root')}}"
-    group: "{{_unbound_group|default('root')}}"
+    src: "{{config_prefix}}{{_unbound_conf_prefix}}/unbound.conf.new"
+    dest: "{{config_prefix}}{{_unbound_conf_prefix}}/unbound.conf"
+    owner: "{{_unbound_user}}"
+    group: "{{_unbound_group}}"
     mode: 0644
     remote_src: yes
-  when: >
-    not ansible_unit_test and
-    status is changed
   notify:
     - restart unbound
+  when: >
+    status is changed
 
 - name: configure firewall
   firewalld:
@@ -91,7 +135,7 @@
     state: enabled
     immediate: true
   when: >
-    not ansible_unit_test and
+    _config_only == false and
     ansible_os_family == "RedHat" or
     (firewalld_available is defined and
     firewalld_available == True)
@@ -106,7 +150,7 @@
 - name: enable unbound
   service: name=unbound enabled=yes
   when: >
-    not ansible_unit_test and
+    _config_only == false and
     ansible_os_family != "Darwin"
 
 # for darwin the service needs to get created first, so easier to go through
@@ -124,5 +168,5 @@
       standard_error: "{{_unbound_home}}/log.err"
       working_directory: "{{_unbound_home}}"
   when: >
-    not ansible_unit_test and
+    _config_only == false and
     ansible_os_family == "Darwin"
