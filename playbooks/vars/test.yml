@@ -1,0 +1,97 @@
+ansible_interfaces:
+- lo
+- virbr0
+- docker0
+- enp42s0
+- lxcbr0
+ansible_lo:
+    active: true
+    device: lo
+    ipv4:
+        address: 127.0.0.1
+        broadcast: ''
+        netmask: 255.0.0.0
+        network: 127.0.0.0
+        prefix: '8'
+    ipv6:
+    -   address: ::1
+        prefix: '128'
+        scope: host
+    mtu: 65536
+    promisc: false
+    type: loopback
+ansible_virbr0:
+    active: false
+    device: virbr0
+    id: 8000.525400becc96
+    interfaces: []
+    ipv4:
+        address: 192.168.11.1
+        broadcast: 192.168.11.255
+        netmask: 255.255.255.0
+        network: 192.168.11.0
+        prefix: '24'
+    macaddress: 52:54:00:00:00:96
+    mtu: 1500
+    promisc: false
+    speed: -1
+    stp: true
+    type: bridge
+ansible_docker0:
+    active: false
+    device: docker0
+    id: 8000.020014a00005
+    interfaces: []
+    ipv4:
+        address: 172.213.0.1
+        broadcast: 172.213.255.255
+        netmask: 255.255.0.0
+        network: 172.213.0.0
+        prefix: '16'
+    macaddress: 02:00:00:00:00:65
+    mtu: 1500
+    promisc: false
+    speed: -1
+    stp: false
+    type: bridge
+ansible_enp42s0:
+    active: true
+    device: enp42s0
+    ipv4:
+        address: 192.168.0.110
+        broadcast: 192.168.0.255
+        netmask: 255.255.255.0
+        network: 192.168.0.0
+        prefix: '24'
+    ipv6:
+    -   address: fe80::8000:0000:0000:0000
+        prefix: '64'
+        scope: link
+    macaddress: 2c:f0:00:00:00:15
+    module: r8169
+    mtu: 1500
+    pciid: 0000:2a:00.0
+    promisc: false
+    speed: 1000
+    type: ether
+ansible_lxcbr0:
+    active: false
+    device: lxcbr0
+    id: 8000.001888000080
+    interfaces: []
+    ipv4:
+        address: 10.0.23.1
+        broadcast: 10.0.23.255
+        netmask: 255.255.255.0
+        network: 10.0.23.0
+        prefix: '24'
+    ipv6:
+    -   address: fc42:8000:0000:0000::1
+        prefix: '64'
+        scope: global
+    macaddress: 00:16:00:88:88:00
+    mtu: 1500
+    promisc: false
+    speed: -1
+    stp: false
+    type: bridge
