@@ -13,7 +13,7 @@
 - hosts: 127.0.0.1
   connection: local
   tasks:
-    - local_action: shell diff test_results/minimal_setup.conf test_data/minimal_setup.conf
+    - local_action: shell diff test_data/minimal_setup.conf test_results/etc/unbound/unbound.conf
       failed_when: "diff_output.rc > 1"
       register: diff_output
     - debug:
@@ -22,9 +22,8 @@
         dest: "{{debug_variable_file|default('/tmp/debug.yml')}}"
         content: '{{hostvars[inventory_hostname] | to_nice_yaml}}'
   vars:
-    ansible_unit_test: True
-    _unbound_new_conf: test_results/minimal_setup.conf
-    _unbound_new_conf_user: "{{ansible_user_id}}"
-    _unbound_new_conf_group: "{{ansible_user_gid}}"
+    config_prefix: test_results
+    _unbound_user: "{{ansible_user_id}}"
+    _unbound_group: "{{ansible_user_gid}}"
   roles:
     - role: ../..

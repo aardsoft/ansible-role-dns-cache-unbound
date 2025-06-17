@@ -1,7 +1,7 @@
 - name: restart unbound
   systemd: name=unbound state=restarted daemon_reload=yes
   when:  >
-    not ansible_unit_test and
+    _config_only == false and
     ansible_os_family != "Darwin"
 
 - name: restart unbound
@@ -9,5 +9,5 @@
     name: "{{_unbound_service|default('fi.aardsoft.unbound')}}"
     state: restarted
   when:  >
-    not ansible_unit_test and
+    _config_only == false and
     ansible_os_family == "Darwin"

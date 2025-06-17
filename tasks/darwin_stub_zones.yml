@@ -2,17 +2,17 @@
 # data-utilities to be reusable
 - name: create resolver directory (Darwin)
   ansible.builtin.file:
-    path: /etc/resolver
+    path: "{{config_prefix}}/etc/resolver"
     state: directory
-    owner: root
-    group: wheel
+    owner: {{_unbound_user}}
+    group: {{_unbound_group}}
 
 - name: add stub resolvers
   template:
     src: macos-resolver.j2
-    dest: "/etc/resolver/{{stub_zone.value['name']}}"
-    owner: "{{_unbound_new_conf_user|default('root')}}"
-    group: "{{_unbound_new_conf_group|default('root')}}"
+    dest: "{{config_prefix}}/etc/resolver/{{stub_zone.value['name']}}"
+    owner: {{_unbound_user}}
+    group: {{_unbound_group}}
     mode: 0644
   loop_control:
     loop_var: stub_zone
@@ -26,4 +26,6 @@
 
 - name: reload mDNSResponder
   shell: killall -HUP mDNSResponder
-  when: _darwin_stubs is changed
+  when: >
+    _darwin_stubs is changed and
+    _config_only == false
