@@ -564,7 +564,6 @@ server:
       {% for network in network_nodes[node].networks %}
         {% set iface = network_nodes[node].networks[network] %}
         {% set _dns_name = iface.dns_name | default(node + '.' + dns_domain) %}
-        {% set _domain_name = (iface.dns_iface_domain | default(dns_domain)) + '.' %}
         {% if iface.ipv4 is defined and
               (iface.nodns is undefined or iface.nodns == false) %}
         local-data: "{{_dns_name}}. IN A {{iface.ipv4 | ipaddr('address')}}"
@@ -572,15 +571,9 @@ server:
           {% if iface.label is defined %}
         local-data: '{{_dns_name}}. TXT "{{iface.label}}"'
           {% endif %}
-          {% if iface.dns_aliases is defined %}
-            {% for alias in iface.dns_aliases %}
-              {% if alias.endswith('.') %}
-        local-data: "{{alias}} IN A {{iface.ipv4 | ipaddr('address')}}"
-              {% else %}
-        local-data: "{{alias}}.{{_domain_name}} IN A {{iface.ipv4 | ipaddr('address')}}"
-              {% endif %}
-            {% endfor %}
-          {% endif %}
+          {% for afqdn in iface.dns_aliases_fqdn|default([]) %}
+        local-data: "{{afqdn}}. IN A {{iface.ipv4 | ipaddr('address')}}"
+          {% endfor %}
         {% else %}
         # skipping {{_dns_name}} {{iface.ipv4|default("without IP")}}
         {% endif %}
